@@ -17,7 +17,7 @@ from audiograbber.utils import format_eta, generate_safe_filename, parse_metadat
 logger = configure_logging()
 
 
-@dataclass(slots=True)
+@dataclass
 class DownloadRequest:
     url: str
     output_dir: str
@@ -29,6 +29,10 @@ class DownloadRequest:
     eta: float = 0.0
     eta_text: str = "--:--"
     error: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.eta_text:
+            self.eta_text = format_eta(self.eta)
 
 
 def build_ytdlp_options(output_dir: str, output_format: str = "mp3") -> dict[str, Any]:
@@ -84,6 +88,7 @@ class DownloadQueue:
             request.status = "done"
             request.progress = 100.0
             request.eta = 0.0
+            request.eta_text = "00:00"
             if output_path:
                 request.filename = str(output_path)
             self._persist_state()
@@ -94,6 +99,7 @@ class DownloadQueue:
             request.error = error
             request.progress = 0.0
             request.eta = 0.0
+            request.eta_text = "--:--"
             self._persist_state()
 
     def all_requests(self) -> list[DownloadRequest]:
@@ -170,6 +176,7 @@ class AudioDownloader:
                 request.status = "done"
                 request.progress = 100.0
                 request.eta = 0.0
+                request.eta_text = "00:00"
                 return request
         except Exception as exc:  # pragma: no cover - runtime diagnostics path
             logger.exception("Download failed for %s", request.url)
@@ -177,6 +184,7 @@ class AudioDownloader:
             request.error = str(exc)
             request.progress = 0.0
             request.eta = 0.0
+            request.eta_text = "--:--"
             return request
 
     def _resolve_output_path(self, output_dir: Path, request: DownloadRequest, info: dict[str, Any] | None) -> str:
