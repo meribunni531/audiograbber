@@ -27,6 +27,7 @@ class DownloadRequest:
     status: str = "queued"
     progress: float = 0.0
     eta: float = 0.0
+    eta_text: str = "--:--"
     error: str | None = None
 
 
@@ -110,6 +111,7 @@ class DownloadQueue:
                 "status": item.status,
                 "progress": item.progress,
                 "eta": item.eta,
+                "eta_text": item.eta_text,
                 "error": item.error,
             }
             for item in self._requests
@@ -136,6 +138,7 @@ class DownloadQueue:
                 status=item.get("status", "queued"),
                 progress=float(item.get("progress", 0.0)),
                 eta=float(item.get("eta", 0.0)),
+                eta_text=str(item.get("eta_text", "--:--")),
                 error=item.get("error"),
             )
             self._requests.append(request)

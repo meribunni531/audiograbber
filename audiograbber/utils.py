@@ -6,8 +6,9 @@ from typing import Any, Mapping
 
 def generate_safe_filename(base_name: str, extension: str = ".mp3") -> str:
     """Create a safe file name by stripping invalid filesystem characters."""
-    cleaned = re.sub(r"[^a-zA-Z0-9_\-\s]", "_", base_name.strip())
-    cleaned = re.sub(r"[\s]+", "_", cleaned).strip("_")
+    normalized = re.sub(r"[^A-Za-z0-9]+", "_", base_name.strip())
+    cleaned = normalized.strip("_")
+    cleaned = re.sub(r"_+", "_", cleaned)
     cleaned = cleaned or "audio"
     if extension and not extension.startswith("."):
         extension = f".{extension}"

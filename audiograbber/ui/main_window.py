@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -117,22 +119,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def start_workers(self) -> None:
         total_workers = self.settings.get_max_workers()
+        if not hasattr(self, "_executor") or self._executor is None:
+            self._executor = ThreadPoolExecutor(max_workers=max(1, total_workers))
         for _ in range(total_workers):
-            worker = QtCore.QThreadPool.globalInstance()
-            worker.start(self._download_worker())
+            self._executor.submit(self._download_worker)
 
-    def _download_worker(self):
-        def worker() -> None:
-            request = self.queue.dequeue()
-            if request is None:
-                return
-            result = self.downloader.download(request)
-            self.queue.mark_done(result, result.filename)
-            self.table_model.beginResetModel()
-            self.table_model.endResetModel()
-            self.status_bar.showMessage(f"Finished: {result.url}")
-
-        return worker
+    def _download_worker(self) -> None:
+        request = self.queue.dequeue()
+        if request is None:
+            return
+        result = self.downloader.download(request)
+        self.queue.mark_done(result, result.filename)
+        self.table_model.beginResetModel()
+        self.table_model.endResetModel()
+        self.status_bar.showMessage(f"Finished: {result.url}")
 
     def apply_theme(self, theme_name: str) -> None:
         self.settings.set_theme(theme_name)
