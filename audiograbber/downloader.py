@@ -40,6 +40,15 @@ def build_ytdlp_options(output_dir: str, output_format: str = "mp3") -> dict[str
     return {
         "format": "bestaudio/best",
         "outtmpl": os.path.join(output_dir, "%(title)s.%(ext)s"),
+        "http_headers": {
+            "User-Agent": (
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            ),
+        },
+        "extractor_args": {"youtube": {"player_client": ["web"]}},
+        "retries": 3,
+        "fragment_retries": 3,
         "quiet": True,
         "noplaylist": True,
         "ignoreerrors": False,
@@ -181,11 +190,22 @@ class AudioDownloader:
         except Exception as exc:  # pragma: no cover - runtime diagnostics path
             logger.exception("Download failed for %s", request.url)
             request.status = "failed"
-            request.error = str(exc)
+            request.error = self._format_error(exc)
             request.progress = 0.0
             request.eta = 0.0
             request.eta_text = "--:--"
             return request
+
+    @staticmethod
+    def _format_error(error: Exception) -> str:
+        message = str(error).strip()
+        if "403" in message or "Forbidden" in message:
+            return (
+                "YouTube a refusé la requête (403). Essayez une URL publique "
+                "ou configurez des cookies de navigateur dans yt-dlp. "
+                f"Détail: {message}"
+            )
+        return message or error.__class__.__name__
 
     def _resolve_output_path(self, output_dir: Path, request: DownloadRequest, info: dict[str, Any] | None) -> str:
         title = str((info or {}).get("title") or request.metadata.get("title") or "audio")

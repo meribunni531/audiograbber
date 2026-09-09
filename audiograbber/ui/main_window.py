@@ -129,10 +129,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if request is None:
             return
         result = self.downloader.download(request)
-        self.queue.mark_done(result, result.filename)
+        if result.status == "done":
+            self.queue.mark_done(result, result.filename)
+        else:
+            self.queue.mark_failed(result, result.error or "Download failed")
         self.table_model.beginResetModel()
         self.table_model.endResetModel()
-        self.status_bar.showMessage(f"Finished: {result.url}")
+        if result.status == "done":
+            self.status_bar.showMessage(f"Finished: {result.url}")
+        else:
+            self.status_bar.showMessage(f"Failed: {result.error}")
 
     def apply_theme(self, theme_name: str) -> None:
         self.settings.set_theme(theme_name)

@@ -10,6 +10,8 @@ def test_build_ytdlp_options_uses_audio_format() -> None:
 
     assert options["format"] == "bestaudio/best"
     assert options["outtmpl"] == "/tmp/audio/%(title)s.%(ext)s"
+    assert options["extractor_args"] == {"youtube": {"player_client": ["web"]}}
+    assert options["retries"] == 3
     assert options["postprocessors"][0]["key"] == "FFmpegExtractAudio"
 
 
